@@ -2,15 +2,30 @@ workflows:
   android-debug:
     name: Music Player A-B
     max_build_duration: 30
+
     environment:
       vars:
-        PACKAGE_NAME: "com.example.musicplayerab"
+        PACKAGE_NAME: "com.musicplayerab"
+
     scripts:
       - name: Set Android SDK location
         script: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+
+      - name: Install Gradle 8.9
+        script: |
+          set -e
+          curl -L --fail --silent --show-error \
+            https://services.gradle.org/distributions/gradle-8.9-bin.zip \
+            -o /tmp/gradle.zip
+          rm -rf /tmp/gradle-8.9
+          unzip -q /tmp/gradle.zip -d /tmp
+          chmod +x /tmp/gradle-8.9/bin/gradle
+          /tmp/gradle-8.9/bin/gradle --version
+
       - name: Build Android APK
         script: |
-          ./gradlew --no-daemon --stacktrace assembleDebug
+          /tmp/gradle-8.9/bin/gradle --no-daemon --stacktrace assembleDebug
+
     artifacts:
       - app/build/outputs/apk/debug/*.apk
