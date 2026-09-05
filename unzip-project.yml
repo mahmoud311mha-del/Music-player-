@@ -1,0 +1,59 @@
+name: ترتيب مشروع Android
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  organize:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: تحميل المستودع
+        uses: actions/checkout@v4
+
+      - name: فك ملف المشروع وترتيبه
+        shell: bash
+        run: |
+          set -e
+
+          ZIP_FILE=$(find . -maxdepth 1 -type f -name "*.zip" | head -n 1)
+
+          if [ -z "$ZIP_FILE" ]; then
+            echo "لم يتم العثور على ملف ZIP"
+            exit 1
+          fi
+
+          mkdir -p /tmp/project
+          unzip -q "$ZIP_FILE" -d /tmp/project
+
+          SETTINGS_FILE=$(find /tmp/project -name "settings.gradle.kts" -o -name "settings.gradle" | head -n 1)
+
+          if [ -z "$SETTINGS_FILE" ]; then
+            echo "لم يتم العثور على ملف settings.gradle.kts أو settings.gradle"
+            exit 1
+          fi
+
+          PROJECT_ROOT=$(dirname "$SETTINGS_FILE")
+
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name ".git" \
+            ! -name ".github" \
+            ! -name "*.zip" \
+            -exec rm -rf {} +
+
+          cp -a "$PROJECT_ROOT"/. .
+
+          echo "تم ترتيب مشروع Android بنجاح"
+
+      - name: حفظ التغييرات في GitHub
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+          git commit -m "ترتيب مشروع Android تلقائيا" || echo "لا توجد تغييرات جديدة"
+          git push
